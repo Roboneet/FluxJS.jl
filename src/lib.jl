@@ -1,4 +1,5 @@
 using NNlib: cdims, padtuple
+import MacroTools: flatten
 
 struct Shape{T,N}
   dims::NTuple{N,Int}
@@ -110,3 +111,12 @@ shape(x::Shape) = x
 shape(x::Tuple) = shape.(x)
 shape(x::AbstractArray) = Shape{eltype(x)}(size(x)...)
 shape(x::TrackedArray) = shape(x.data)
+
+flatten(a::AbstractArray) = reshape(a, :, size(a)[end])
+
+@primitive Trace flatten(a::AbstractArray) =
+  StagedArray(flatten, a)
+
+jscall(::typeof(flatten), x) = jscall(:(apply), x, jscall(:(math.layers.flatten)))
+
+shape(::typeof(flatten), x::Shape{T}) where T = Shape{T}(Base._reshape_uncolon(x, (:, size(x)[end])))
