@@ -117,6 +117,9 @@ flatten(a::AbstractArray) = reshape(a, :, size(a)[end])
 @primitive Trace flatten(a::AbstractArray) =
   StagedArray(flatten, a)
 
-jscall(::typeof(flatten), x) = jscall(:(apply), x, jscall(:(math.layers.flatten)))
+jscall(::typeof(flatten), x) =
+  jscall(:(math.transpose),jscall(:(flux.apply),
+   jscall(:(math.transpose), x, :([0, 3, 2, 1])), jscall(:(math.layers.flatten))))
 
-shape(::typeof(flatten), x::Shape{T}) where T = Shape{T}(Base._reshape_uncolon(x, (:, size(x)[end])))
+shape(::typeof(flatten), x::Shape{T}) where T =
+ Shape{T}(Base._reshape_uncolon(x, (:, size(x)[end])))
